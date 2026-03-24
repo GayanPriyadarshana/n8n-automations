@@ -1,0 +1,88 @@
+{
+  "name": "Contact Enrichment Automation (HubSpot + Apollo)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID_HERE", "mode": "list" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list" },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [-176, -240],
+      "id": "trigger_node",
+      "name": "Google Sheets Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/api/v1/people/match",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "YOUR_APOLLO_API_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{$node['HubSpot - Get'].json.properties.email}}\",\n  \"first_name\": \"{{$node['HubSpot - Get'].json.properties.firstname}}\",\n  \"last_name\": \"{{$node['HubSpot - Get'].json.properties.lastname}}\",\n  \"domain\": \"{{$node['HubSpot - Get'].json.properties.website}}\",\n  \"reveal_phone_number\": true,\n  \"webhook_url\": \"YOUR_N8N_WEBHOOK_URL\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [464, -256],
+      "id": "apollo_node",
+      "name": "apollo"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{ $json.hubspot_id }}?",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "properties", "value": "email,firstname,lastname,company,jobtitle,phone,website,linkedin" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_HUBSPOT_PAT" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [32, -240],
+      "id": "hubspot_get_node",
+      "name": "HubSpot - Get"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.properties.phone }}",
+              "operator": { "type": "string", "operation": "empty", "singleValue": true }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [240, -240],
+      "name": "If Phone Missing"
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": { "main": [[{ "node": "HubSpot - Get", "type": "main", "index": 0 }]] },
+    "HubSpot - Get": { "main": [[{ "node": "If Phone Missing", "type": "main", "index": 0 }]] },
+    "If Phone Missing": { "main": [[{ "node": "apollo", "type": "main", "index": 0 }]] }
+  }
+}
