@@ -1,0 +1,492 @@
+{
+  "name": "ICP Category Update (Sanitized)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REDACTED_SHEET_NAME",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "REDACTED_TAB_NAME",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        -192
+      ],
+      "id": "cba57019-4d85-46f7-8665-0f58a4ee4da1",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// ICP CLASSIFICATION CODE NODE (Hardcoded Lists)\n// Matches Python notebook logic exactly\n// ============================================================\n\n// --- 1. RED FLAG INDUSTRIES (Immediate \"Irrelevant\") ---\nconst red_flag_industries = new Set([\n  \"Home Improvement\", \"Home Renovation\", \"Adult\", \"Adventure Travel\", \"American Football\",\n  \"Amusement Park and Arcade\", \"Apparel\", \"Art\", \"B2C\", \"Baby\", \"Bakery\", \"Basketball\",\n  \"Beauty\", \"Boating\", \"Brewing\", \"Cannabis\", \"Card and Board Games\", \"Casino\",\n  \"Casual Games\", \"Celebrity\", \"Charter Schools\", \"Child Care\", \"Children\",\n  \"Cleaning Products\", \"Coffee\", \"Collectibles\", \"Comics\", \"Concerts\", \"Confectionery\",\n  \"Console Games\", \"Consumer\", \"Consumer Applications\", \"Consumer Lending\", \"Contests\",\n  \"Cooking\", \"Corrections Facilities\", \"Cosmetic Surgery\", \"Cosmetics\", \"Craft Beer\",\n  \"Creative Agency\", \"Cricket\", \"Cycling\", \"Dairy\", \"Dating\", \"Dietary Supplements\",\n  \"Distillery\", \"Diving\", \"Elder Care\", \"Elderly\", \"eSports\", \"Eyewear\", \"Family\",\n  \"Fantasy Sports\", \"Fashion\", \"Fast-Moving Consumer Goods\", \"Flowers\", \"Food Trucks\",\n  \"Fruit\", \"Funerals\", \"Gambling\", \"Gaming\", \"Generation Y\", \"Generation Z\", \"Golf\",\n  \"Green Consumer Goods\", \"Grocery\", \"Handmade\", \"Herbs and Spices\", \"Hockey\",\n  \"Home Appliances\", \"Home Decor\", \"Home Services\", \"Homeless Shelter\", \"Humanitarian\",\n  \"Hunting\", \"Independent Music\", \"Internet Radio\", \"Jewelry\", \"Laundry and Dry-cleaning\",\n  \"LGBT\", \"Lifestyle\", \"Limousine Service\", \"Lingerie\", \"Meat and Poultry\", \"Men's\",\n  \"Millennials\", \"MMO Games\", \"Motorsports\", \"Museums and Historical Sites\", \"Music Venues\",\n  \"Musical Instruments\", \"Nightclubs\", \"Nightlife\", \"Nintendo\", \"Non-Fungible Token (NFT)\",\n  \"Online Games\", \"Outdoors\", \"Parenting\", \"Parks\", \"PC Games\", \"Performing Arts\",\n  \"Personal Care and Hygiene\", \"Personal Finance\", \"Pet\", \"Plant-Based Foods\",\n  \"Playstation\", \"Primary Education\", \"Racing\", \"Recipes\", \"Recreation\",\n  \"Recreational Vehicles\", \"Rehabilitation\", \"Religion\", \"Resorts\", \"Restaurants\",\n  \"Roku\", \"Rugby\", \"Sailing\", \"Seafood\", \"Secondary Education\", \"Secondhand Goods\",\n  \"Serious Games\", \"Sex Industry\", \"Sex Tech\", \"Shoes\", \"Shopping\", \"Shopping Mall\",\n  \"Skiing\", \"Small and Medium Businesses\", \"Smart Home\", \"Snack Food\", \"Soccer\",\n  \"Social Assistance\", \"Social Shopping\", \"Sporting Goods\", \"Sports\",\n  \"Sports Leagues and Teams\", \"STEM Education\", \"Surfing\", \"Swimming\", \"Table Tennis\",\n  \"Taxi Service\", \"Tea\", \"Teenagers\", \"Tennis\", \"Textbook\", \"Timeshare\", \"Tobacco\",\n  \"Tour Operator\", \"Tourism\", \"Toys\", \"Travel\", \"Travel Accommodations\", \"Travel Agency\",\n  \"Ultimate Frisbee\", \"Underserved Children\", \"Universities\", \"Vacation Rental\",\n  \"Veterinary\", \"Video Games\", \"Virtual Goods\", \"Vocational Education\", \"Volley Ball\",\n  \"Wearables\", \"Wedding\", \"Wildlife Conservation\", \"Windows Phone\", \"Wine And Spirits\",\n  \"Winery\", \"Women's\", \"Xbox\", \"Young Adults\"\n]);\n\n// --- 2. NEGATIVE INDUSTRIES (Score: -1) ---\nconst score_negative_industries = new Set([\n  \"Food and Beverage\", \"Real Estate\", \"Mobile\", \"Subscription Service\", \"Video on Demand\",\n  \"Video Streaming\", \"National Security\", \"Photography\", \"Textiles\", \"Marketplace\",\n  \"Advocacy\", \"Auctions\", \"Audio Recording and Production\", \"Audio/Visual Equipment\",\n  \"Car Sharing\", \"College Recruiting\", \"Coupons\", \"DIY\", \"Farmers Market\", \"Fitness\",\n  \"Flash Sale\", \"Google Glass\", \"Home and Garden\", \"Local\", \"Local Advertising\",\n  \"Local Business\", \"Local Shopping\", \"Music\", \"Music Education\", \"Music Label\",\n  \"Music Streaming\", \"Nutrition\", \"Organic\", \"Organic Food\", \"Social\", \"Retail\",\n  \"Virtual Currency\", \"Consumer Electronics\", \"Online Portals\", \"Real Time\",\n  \"Decentralized Finance (DeFi)\", \"Smart Contracts\", \"Web3\", \"Social Media\",\n  \"Sponsorship\", \"In-Flight Entertainment\", \"PropTech\", \"Addiction Treatment\", \"Advice\",\n  \"Agriculture\", \"Alternative Medicine\", \"Alternative Protein\", \"Alumni\", \"Angel Investment\",\n  \"Animal Feed\", \"Animation\", \"Aquaculture\", \"Asset Management\", \"Assisted Living\",\n  \"Association\", \"Audio\", \"Audiobooks\", \"Augmented Reality\", \"Auto Insurance\", \"Biopharma\",\n  \"Books\", \"Catering\", \"Cause Marketing\", \"Charity\", \"Classifieds\", \"Clinical Trials\",\n  \"Collaborative Consumption\", \"Communities\", \"Consumer Goods\", \"Consumer Reviews\",\n  \"Consumer Software\", \"Content\", \"Continuing Education\", \"Copywriting\", \"Crowdsourcing\",\n  \"Darknet\", \"Desktop Apps\", \"Diabetes\", \"Digital Entertainment\", \"Domain Registrar\",\n  \"EBooks\", \"Edutainment\", \"Emergency Medicine\", \"Emerging Markets\", \"Equestrian\",\n  \"Extermination Service\", \"Facebook\", \"Farming\", \"Fertility\", \"Film\", \"Film Distribution\",\n  \"Film Production\", \"First Aid\", \"Food Delivery\", \"Food Processing\", \"Forestry\",\n  \"Franchise\", \"Freelance\", \"Furniture\", \"Gamification\", \"Gift\", \"Gift Card\",\n  \"Gift Exchange\", \"Gift Registry\", \"Group Buying\", \"Guides\", \"Hedge Funds\",\n  \"Higher Education\", \"Home Health Care\", \"Homeland Security\", \"Horticulture\",\n  \"Hospitality\", \"Hotel\", \"Housekeeping Service\", \"Hydroponics\", \"Impact Investing\",\n  \"Incubators\", \"Interior Design\", \"Janitorial Service\", \"Journalism\", \"Landscaping\",\n  \"Language Learning\", \"Law Enforcement\", \"Leisure\", \"Life Insurance\", \"Livestock\",\n  \"Made to Order\", \"Media and Entertainment\", \"Mental Health\", \"Metaverse\", \"Mobile Devices\",\n  \"Mortgage\", \"Motion Capture\", \"News\", \"Non Profit\", \"Nursing and Residential Care\",\n  \"Nutraceutical\", \"Office Supplies\", \"Oncology\", \"Online Auctions\", \"Online Forums\",\n  \"Outpatient Care\", \"Peer to Peer\", \"Personal Branding\", \"Personal Development\",\n  \"Personal Health\", \"Personalization\", \"Photo Editing\", \"Photo Sharing\", \"Podcast\",\n  \"Point of Sale\", \"Politics\", \"Precision Medicine\", \"Price Comparison\",\n  \"Primary and Urgent Care\", \"Private Social Networking\", \"Psychology\", \"Public Safety\",\n  \"Q&A\", \"Reading Apps\", \"Real Estate Brokerage\", \"Rental\", \"Rental Property\",\n  \"Reservations\", \"Residential\", \"Retirement\", \"Ride Sharing\", \"Sharing Economy\",\n  \"Skill Assessment\", \"Social Bookmarking\", \"Social Entrepreneurship\", \"Social Impact\",\n  \"Social Network\", \"Social News\", \"Space Travel\", \"Special Education\", \"Telehealth\",\n  \"Theatre\", \"Therapeutics\", \"Ticketing\", \"Tizen\", \"Tutoring\", \"TV\", \"TV Production\",\n  \"Twitter\", \"Venture Capital\", \"Video Editing\", \"Virtual Reality\", \"Virtual World\",\n  \"Wealth Management\", \"Wellness\", \"Wholesale\", \"Windows\", \"Vending and Concessions\",\n  \"Cryptocurrency\", \"Ethereum\", \"Heating, Ventilation, and Air Conditioning (HVAC)\"\n]);\n\n// --- 3. NON-TECH INDUSTRIES (Score: +1, Count as Non-Tech) ---\nconst score_non_tech_industries = new Set([\n  \"Consulting\", \"Customer Service\", \"Security\", \"Archiving Service\", \"Commercial\",\n  \"Compliance\", \"Employment\", \"Human Resources\", \"Innovation Management\", \"Market Research\",\n  \"Outsourcing\", \"Recruiting\", \"Risk Management\", \"Service Industry\", \"Staffing Agency\",\n  \"Privacy\", \"B2B\", \"Business Development\", \"Business Travel\", \"Call Center\",\n  \"Career Planning\", \"Consumer Research\", \"Corporate Training\", \"Courier Service\", \"Delivery\",\n  \"Document Preparation\", \"Employee Benefits\", \"Enterprise\", \"Environmental Consulting\",\n  \"Facilities Support Services\", \"Field Support\", \"Industrial Design\", \"Intellectual Property\",\n  \"Knowledge Management\", \"Legal\", \"Management Consulting\", \"Mechanical Design\",\n  \"Office Administration\", \"Packaging Services\", \"Parking\", \"Physical Security\",\n  \"Product Design\", \"Product Management\", \"Product Research\", \"Professional Networking\",\n  \"Project Management\", \"Quality Assurance\", \"Social Recruiting\", \"Trade Shows\",\n  \"Translation Service\", \"Virtual Workforce\", \"Bookkeeping and Payroll\", \"Tax Consulting\",\n  \"Tax Preparation\", \"Foreign Exchange Trading\", \"Power Grid\", \"Battery\", \"Biofuel\",\n  \"Biomass Energy\", \"Carbon Capture\", \"Clean Energy\", \"Electrical Distribution\", \"Energy\",\n  \"Energy Efficiency\", \"Energy Management\", \"Energy Storage\", \"Fossil Fuels\", \"Fuel\",\n  \"Fuel Cell\", \"Geothermal Energy\", \"Hydroelectric\", \"Mineral\", \"Mining\", \"Mining Technology\",\n  \"Natural Resources\", \"Oil and Gas\", \"Pollution Control\", \"Precious Metals\", \"Recycling\",\n  \"Renewable Energy\", \"Solar\", \"Timber\", \"Waste Management\", \"Water\", \"Water Purification\",\n  \"Wind Energy\", \"Finance\", \"Accounting\", \"Debt Collections\", \"Insurance\", \"Banking\",\n  \"Bitcoin\", \"Collection Agency\", \"Commercial Insurance\", \"Commercial Lending\", \"Credit\",\n  \"Credit Bureau\", \"Credit Cards\", \"Crowdfunding\", \"Events\", \"Funding Platform\",\n  \"Health Insurance\", \"Leasing\", \"Lending\", \"Micro Lending\", \"Property Insurance\",\n  \"Real Estate Investment\", \"Stock Exchanges\", \"Health Care\", \"Hospital\", \"Medical Device\",\n  \"Marine Transportation\", \"Air Transportation\", \"Delivery Service\", \"Ferry Service\",\n  \"Freight Service\", \"Last Mile Transportation\", \"Logistics\", \"Ports and Harbors\",\n  \"Procurement\", \"Public Transportation\", \"Same Day Delivery\", \"Shipping\", \"Shipping Broker\",\n  \"Transportation\", \"Warehousing\", \"Water Transportation\", \"Manufacturing\", \"Industrial\",\n  \"Advanced Materials\", \"Aerospace\", \"Chemical\", \"Chemical Engineering\", \"Civil Engineering\",\n  \"Environmental Engineering\", \"Foundries\", \"Industrial Engineering\", \"Mechanical Engineering\",\n  \"Nuclear\", \"Paper Manufacturing\", \"Plastics and Rubber Manufacturing\", \"Wood Processing\",\n  \"Marketing\", \"Lead Generation\", \"Printing\", \"Advertising\", \"Graphic Design\", \"UX Design\",\n  \"Web Design\", \"Affiliate Marketing\", \"App Marketing\", \"Brand Marketing\", \"Content Creators\",\n  \"Content Marketing\", \"Content Syndication\", \"Digital Marketing\", \"Digital Media\",\n  \"Digital Signage\", \"Direct Marketing\", \"Direct Sales\", \"Event Management\", \"Event Promotion\",\n  \"Lead Management\", \"Loyalty Programs\", \"Multi-level Marketing\", \"Outdoor Advertising\",\n  \"Public Relations\", \"Publishing\", \"Sales\", \"Social Media Advertising\",\n  \"Social Media Marketing\", \"Video Advertising\", \"Infrastructure\", \"Property Management\",\n  \"Architecture\", \"Building Maintenance\", \"Building Material\", \"Commercial Real Estate\",\n  \"Construction\", \"Coworking\", \"Facility Management\", \"Property Development\", \"Self-Storage\",\n  \"Medical\", \"Automotive\", \"Health Diagnostics\", \"Training\", \"Pharmaceutical\", \"Railroad\",\n  \"Green Building\", \"Biotechnology\", \"Debit Cards\", \"Dental\"\n]);\n\n// --- 4. TECH INDUSTRIES (Score: +1, Count as Tech) ---\nconst score_tech_industries = new Set([\n  \"Ediscovery\", \"Information Services\", \"Professional Services\", \"SEO\", \"Technical Support\",\n  \"Cloud Storage\", \"Software Engineering\", \"Marine Technology\", \"DevOps\", \"Sales Enablement\",\n  \"ISP\", \"Web Hosting\", \"Prediction Markets\", \"Internet of Things\", \"Computer\",\n  \"3D Technology\", \"Computer Vision\", \"Telecommunications\", \"Cloud Infrastructure\",\n  \"Data Center\", \"Data Center Automation\", \"Data Storage\", \"Private Cloud\", \"Virtualization\",\n  \"Charging Infrastructure\", \"Application Specific Integrated Circuit (ASIC)\", \"CleanTech\",\n  \"Remote Sensing\", \"Drone Management\", \"Drones\", \"DSP\", \"Electronic Design Automation (EDA)\",\n  \"Embedded Systems\", \"Field-Programmable Gate Array (FPGA)\", \"Flash Storage\", \"GPU\",\n  \"GreenTech\", \"Hardware\", \"Laser\", \"Lighting\", \"Military\", \"NFC\", \"Retail Technology\",\n  \"RFID\", \"RISC\", \"Robotics\", \"Semiconductor\", \"Sensor\", \"Sustainability\",\n  \"Video Conferencing\", \"Communication Hardware\", \"Communications Infrastructure\", \"GPS\",\n  \"Network Hardware\", \"Optical Communication\", \"Satellite Communication\", \"Wireless\",\n  \"Assistive Technology\", \"Bioinformatics\", \"Biometrics\", \"Electronic Health Record (EHR)\",\n  \"Genetics\", \"Life Science\", \"mHealth\", \"Neuroscience\", \"Quantified Self\",\n  \"Electric Vehicle\", \"Autonomous Vehicles\", \"Fleet Management\", \"Supply Chain Management\",\n  \"Warehouse Automation\", \"Industrial Automation\", \"Machinery Manufacturing\",\n  \"Industrial Manufacturing\", \"Nanotechnology\", \"Quantum Computing\", \"3D Printing\", \"SEM\",\n  \"Content Discovery\", \"A/B Testing\", \"Ad Exchange\", \"Ad Network\", \"Ad Retargeting\",\n  \"Ad Server\", \"Ad Targeting\", \"Advertising Platforms\", \"Email Marketing\", \"Mobile Advertising\",\n  \"Native Advertising\", \"Blogging Platforms\", \"Social Media Management\", \"Smart Building\",\n  \"Smart Cities\", \"Software\", \"Information Technology\", \"Machine Learning\", \"SaaS\",\n  \"Analytics\", \"Enterprise Software\", \"Artificial Intelligence (AI)\", \"Big Data\",\n  \"Predictive Analytics\", \"Cloud Computing\", \"Financial Services\", \"Natural Language Processing\",\n  \"Payments\", \"Business Intelligence\", \"Data Management\", \"Cloud Data Services\", \"Linux\",\n  \"PaaS\", \"Cloud Security\", \"Cyber Security\", \"Network Security\", \"FinTech\", \"InsurTech\",\n  \"Apps\", \"AgTech\", \"Billing\", \"E-Commerce\", \"CRM\", \"Developer Tools\", \"Semantic Search\",\n  \"Data Collection and Labeling\", \"Data Governance\", \"Application Performance Management\",\n  \"Data Integration\", \"Data Mining\", \"Data Visualization\", \"Database\", \"Facial Recognition\",\n  \"Geospatial\", \"Image Recognition\", \"Intelligent Systems\", \"Location Based Services\",\n  \"Generative AI\", \"Speech Recognition\", \"Test and Measurement\", \"Text Analytics\",\n  \"Usability Testing\", \"Legal Tech\", \"Business Information Systems\", \"Cloud Management\",\n  \"Robotic Process Automation (RPA)\", \"IaaS\", \"Information and Communications Technology (ICT)\",\n  \"IT Infrastructure\", \"IT Management\", \"Management Information Systems\", \"Operating Systems\",\n  \"Web Development\", \"Fraud Detection\", \"Identity Management\", \"Intrusion Detection\",\n  \"Penetration Testing\", \"Spam Filtering\", \"Financial Exchanges\", \"Prepaid Cards\",\n  \"Mobile Payments\", \"Transaction Processing\", \"Android\", \"Business Process Automation (BPA)\",\n  \"Chatbot\", \"Browser Extensions\", \"CAD\", \"CivicTech\", \"CMS\", \"Contact Management\",\n  \"Content Delivery Network\", \"Developer APIs\", \"Developer Platform\", \"Document Management\",\n  \"DRM\", \"E-Commerce Platforms\", \"E-Learning\", \"E-Signature\", \"EdTech\", \"Email\",\n  \"Embedded Software\", \"Enterprise Applications\", \"Enterprise Resource Planning (ERP)\",\n  \"File Sharing\", \"Government\", \"GovTech\", \"Human Computer Interaction\", \"Indoor Positioning\",\n  \"Mapping Services\", \"Marketing Automation\", \"Meeting Software\", \"MOOC\", \"Navigation\",\n  \"Presentation Software\", \"Presentations\", \"Product Search\", \"Productivity Tools\",\n  \"QR Codes\", \"Reputation\", \"Sales Automation\", \"Scheduling\", \"Semantic Web\", \"Simulation\",\n  \"Social CRM\", \"Web Apps\", \"Task Management\", \"Vertical Search\", \"Video Chat\",\n  \"Virtual Assistant\", \"Virtual Desktop\", \"Visual Search\", \"Web Browsers\", \"Messaging\",\n  \"SMS\", \"SNS\", \"Unified Communications\", \"VoIP\", \"Wired Telecommunications\", \"Video\",\n  \"Collaboration\", \"Electronics\", \"Mobile Apps\", \"Trading Platform\", \"Broadcasting\",\n  \"Internet\", \"Open Source\", \"Search Engine\", \"Blockchain\", \"App Discovery\", \"Education\",\n  \"iOS\", \"WebOS\", \"Freemium\", \"Google\", \"macOS\"\n]);\n\n// ============================================================\n// CLASSIFICATION LOGIC\n// ============================================================\n\nfunction determine_status(industries_str) {\n  if (typeof industries_str !== \"string\" || industries_str.trim() === \"\") return \"Irrelevant\";\n\n  const industries = industries_str.split(\",\").map(i => i.trim());\n\n  // Step 1: Red flag check — any red flag = Irrelevant immediately\n  for (const ind of industries) {\n    if (red_flag_industries.has(ind)) return \"Irrelevant\";\n  }\n\n  // Step 2: Score each industry\n  let score = 0, tech_count = 0, non_tech_count = 0;\n  for (const ind of industries) {\n    if (score_negative_industries.has(ind)) score -= 1;\n    if (score_non_tech_industries.has(ind)) { score += 1; non_tech_count += 1; }\n    if (score_tech_industries.has(ind))     { score += 1; tech_count += 1; }\n  }\n\n  // Step 3: Final decision\n  if (score < 0) return \"Irrelevant\";\n  if (score === 0 && tech_count === 0 && non_tech_count === 0) return \"Irrelevant\";\n  if (tech_count > non_tech_count) return \"Tech\";\n  if (non_tech_count > tech_count) return \"Non-Tech\";\n  return \"Tech\"; // Tie-breaker: equal counts → Tech (matches Python)\n}\n\n// ============================================================\n// PROCESS COMPANIES\n// ============================================================\n\nconst companies = $input.all();\nreturn companies.map(item => {\n  const industriesStr = item.json.cb_industries;\n  const companyIdRaw  = item.json.company_id;\n  return {\n    json: {\n      company_id: companyIdRaw != null ? parseInt(companyIdRaw, 10) : null,\n      cb_industries: industriesStr,\n      industry_status: determine_status(industriesStr)\n    },\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -192
+      ],
+      "id": "2f9f3911-757f-4c1f-9e2b-8549fbbc8163",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/companies/{{ $json.company_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{hubspot-api-key}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"icp_category\": \"{{ $json.industry_status }}\",\n    \"icp_category_last_updated_date\": \"{{ new Date().toISOString().split('T')[0] }}\",\n    \"icp_category_last_updated_source\": \"Bot\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1648,
+        240
+      ],
+      "id": "2f2da440-6d61-4a16-a140-26e0e3415d1f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7d307209-494b-453d-a94e-84ac928fc1e7",
+              "leftValue": "={{ $json.industry_status }}",
+              "rightValue": "Irrelevant",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        -160
+      ],
+      "id": "8caa5aab-5f4c-40e0-9c51-e5d51176dc6d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hubapi.com/crm/v3/objects/companies/{{ $json.company_id }}?properties=name,domain,description,industry",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization ",
+              "value": "Bearer {{hubspot-api-key}}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        -64
+      ],
+      "id": "2c4fdc39-2a1f-4a4a-b6f9-60cced734be0",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $json.properties.domain }}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        -224
+      ],
+      "id": "0e54588a-40f4-4c64-b8e1-a0d46afa971d",
+      "name": "HTTP Request2",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "OPENAI_MODEL"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a B2B company classifier. Analyze the company info and website content provided. Respond ONLY with valid JSON: {\\\"is_b2b\\\": true/false, \\\"confidence\\\": \\\"high\\\"/\\\"medium\\\"/\\\"low\\\", \\\"reasoning\\\": \\\"brief explanation\\\", \\\"suggested_industry\\\": \\\"most accurate industry if different from original\\"
+            },
+            {
+              "content": "=Company: {{ $('HTTP Request1').item.json.properties.name }}\\nIndustry: {{ $('HTTP Request1').item.json.properties.industry }}\\nDescription: {{ $('HTTP Request1').item.json.properties.description }}\\nDomain: {{ $('HTTP Request1').item.json.properties.domain }}\\n\\nWebsite content (first 3000 chars):\\n{{ $json.clean_content }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1408,
+        -256
+      ],
+      "id": "08916131-de8e-4b85-81d4-3b1c8f72c0da",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const companyId = $('Loop Over Items').item.json.company_id;\n  \n  let aiResult = { is_b2b: false, confidence: 'low', reasoning: 'Parse failed', suggested_industry: '' };\n  \n  try {\n    const content = item.json.output?.[0]?.content?.[0]?.text || item.json.choices?.[0]?.message?.content || '{}';\n    aiResult = JSON.parse(content);\n  } catch (e) {\n    aiResult.reasoning = 'Failed to parse OpenAI response: ' + e.message;\n  }\n  \n  let newScore = 'Irrelevant';\n\n  if (aiResult.is_b2b === true) {\n    if (aiResult.confidence === 'high' || aiResult.confidence === 'medium') {\n      const suggested = (aiResult.suggested_industry || '').toLowerCase();\n      if (suggested.includes('tech') || suggested.includes('software') || suggested.includes('saas') || suggested.includes('it')) {\n        newScore = 'Tech';\n      } else {\n        newScore = 'Non-Tech';\n      }\n    }\n  }\n  \n  results.push({\n    json: {\n      company_id: companyId,\n      original_score: 'Irrelevant',\n      new_score: newScore,\n      is_b2b: aiResult.is_b2b,\n      confidence: aiResult.confidence,\n      reasoning: aiResult.reasoning,\n      suggested_industry: aiResult.suggested_industry || '',\n      was_rescored: newScore !== 'Irrelevant'\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        -16
+      ],
+      "id": "a3db1239-4544-4296-8c1f-2a84a411d2f6",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/companies/{{ $json.company_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{hubspot-api-key}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"icp_category\": \"{{ $json.new_score }}\",\n    \"icp_category_last_updated_date\": \"{{ new Date().toISOString().split('T')[0] }}\",\n    \"icp_category_last_updated_source\": \"Bot\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1968,
+        -48
+      ],
+      "id": "70054eca-3620-4419-bfea-5dbd6a715cf1",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        544,
+        -224
+      ],
+      "id": "2b732482-d9b4-4536-b288-91bbea1ce27e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "batchSize": 25,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        528,
+        240
+      ],
+      "id": "cd6b311e-36ff-4a87-839e-b0a65202907c",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "company_id",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -192
+      ],
+      "id": "714678cf-63e1-4521-ae29-fae317c918cb",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(item => {\n  let html = item.json.data || '';\n  let clean = html\n    .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n    .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .substring(0, 3000);\n  \n  return {\n    json: {\n      ...item.json,\n      clean_content: clean\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -464
+      ],
+      "id": "c6f4edfb-07dd-4a1b-992d-f9f71ed6bf9a",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1856,
+        240
+      ],
+      "id": "0b2568ba-512f-487c-81b3-e4d726c42a6c",
+      "name": "Wait",
+      "webhookId": "44912b32-7ecb-4cc9-907d-bcfbd385a1ce"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "REDACTED_VERSIONID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "id": "REDACTED_ID",
+  "tags": []
+}

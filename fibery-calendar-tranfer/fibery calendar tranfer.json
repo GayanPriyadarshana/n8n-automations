@@ -1,0 +1,71 @@
+{
+  "name": "Fibery Calendar",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 6 }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.hubapi.com/broadcast/v1/broadcasts?since=1767225600000",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{HUBSPOT_API_KEY}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Fetch HubSpot Posts"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nrich.fibery.io/api/commands",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token {{FIBERY_API_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "jsonBody": "={{ $json.fiberyBody }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Send to Fibery"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://nrich.fibery.io/api/commands",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token {{FIBERY_API_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "jsonBody": "[{\"command\":\"fibery.entity/query\",\"args\":{\"query\":{\"q/from\":\"Marketing Operations/All Marketing Projects\",\"q/select\":[\"fibery/id\",\"Marketing Operations/HubSpot ID\"],\"q/where\":[\"!=\",[\"Marketing Operations/HubSpot ID\"],null],\"q/limit\":1000}}}]"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Fetch Existing Fibery Records"
+    }
+  ]
+}

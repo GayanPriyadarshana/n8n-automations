@@ -1,0 +1,285 @@
+{
+  "name": "LinkedIn Slack Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "app_mention"
+        ],
+        "watchWorkspace": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "REDACTED_NODE_ID_SLACK_TRIGGER",
+      "name": "Slack Trigger",
+      "webhookId": "REDACTED_WEBHOOK_ID",
+      "credentials": {
+        "slackApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_SLACKAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "You are a LinkedIn engagement analyst assistant for a B2B marketing team.\n\nYou have access to NocoDB tables containing LinkedIn engagement data:\n- Posts: All team members' LinkedIn posts with stats (likes, comments, shares, postedAt, memberName)\n- One Engagers table per team member (e.g. Justin Engagers, Brian Engagers) containing people who engaged with their posts\n\nEach Engagers table contains:\n- fullName, linkedinUrl, jobTitle, companyName\n- engagementType (Comment, Like, Reaction)\n- commentText, commentDate\n- postUrl, postDate\n- teamMember\n- icpStatus (Unknown, Tier 1, Tier 2, Tier 3, Not ICP)\n- dateAdded\n\nWhen answering questions:\n- Always query the relevant NocoDB tables first before answering\n- If asked about a specific person, search across all engager tables\n- If asked about the whole team, query all available tables\n- Format responses clearly for Slack using bullet points\n- Be specific with numbers, names and dates\n- When new team members are added, their data will be in a new table named \"[Name] Engagers\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "REDACTED_NODE_ID_AI_AGENT",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        208
+      ],
+      "id": "REDACTED_NODE_ID_OPENAI_CHAT_MODEL",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_OPENAIAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.channel }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        240
+      ],
+      "id": "REDACTED_NODE_ID_SIMPLE_MEMORY",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "getAll",
+        "projectId": "REDACTED_NOCO_PROJECT_ID",
+        "table": "REDACTED_TABLE_ID",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.nocoDbTool",
+      "typeVersion": 3,
+      "position": [
+        368,
+        256
+      ],
+      "id": "REDACTED_NODE_ID_POSTS",
+      "name": "Posts",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_NOCODBAPITOKEN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Slack Trigger').item.json.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Slack Trigger').item.json.ts }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        800,
+        -16
+      ],
+      "id": "REDACTED_NODE_ID_SEND_A_MESSAGE1",
+      "name": "Send a message1",
+      "webhookId": "REDACTED_WEBHOOK_ID",
+      "credentials": {
+        "slackApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_SLACKAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "getAll",
+        "projectId": "REDACTED_NOCO_PROJECT_ID",
+        "table": "REDACTED_TABLE_ID",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.nocoDbTool",
+      "typeVersion": 3,
+      "position": [
+        512,
+        272
+      ],
+      "id": "REDACTED_NODE_ID_MARKUS",
+      "name": "Markus",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_NOCODBAPITOKEN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "getAll",
+        "projectId": "REDACTED_NOCO_PROJECT_ID",
+        "table": "REDACTED_TABLE_ID",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.nocoDbTool",
+      "typeVersion": 3,
+      "position": [
+        720,
+        240
+      ],
+      "id": "REDACTED_NODE_ID_YULIA",
+      "name": "Yulia",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "REDACTED_NOCODBAPITOKEN"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Posts": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    },
+    "Markus": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yulia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "REDACTED_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "id": "REDACTED_WORKFLOW_ID",
+  "tags": []
+}
