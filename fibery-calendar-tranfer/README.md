@@ -3,6 +3,8 @@
 ## Overview
 This workflow syncs HubSpot social media posts into Fibery as marketing project records.
 
+<img width="1489" height="380" alt="Image" src="https://github.com/user-attachments/assets/6c8d377b-a024-4c37-a073-495c2abe38d9" />
+
 ## What it does
 
 1. Runs every 6 hours
