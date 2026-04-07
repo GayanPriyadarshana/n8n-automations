@@ -3,6 +3,8 @@
 ## 📌 Overview
 This automation streamlines the sales prospecting workflow by automatically enriching HubSpot contact data. When a new contact ID is added to a Google Sheet, the system checks HubSpot for existing data and uses the **Apollo.io API** to find missing mobile phone numbers via an asynchronous waterfall approach.
 
+<img width="1480" height="592" alt="Image" src="https://github.com/user-attachments/assets/c50f42c7-dd3d-416f-af30-bc76157d3447" />
+
 ## 🛠️ The Tech Stack
 * **n8n**: Workflow orchestration and logic.
 * **HubSpot CRM API**: Data retrieval and contact patching.
